@@ -1,8 +1,9 @@
-mod utils;
+pub mod utils;
 
 extern crate wasm_bindgen;
 
 use std::fmt;
+use utils::*;
 use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram};
 
@@ -14,7 +15,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 
 #[wasm_bindgen(start)]
-pub  fn start() -> Result<(), JsValue> {
+pub fn start() -> Result<(), JsValue> {
     let document = web_sys::window().unwrap().document().unwrap();
     let canvas = document.get_element_by_id("canvas").unwrap();
     let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into::<web_sys::HtmlCanvasElement>()?;
@@ -99,61 +100,6 @@ pub  fn start() -> Result<(), JsValue> {
 
     Ok(())
 
-}
-
-fn draw(context: &WebGl2RenderingContext, vert_count: i32) { 
-    context.clear_color(0.0, 0.0, 0.0, 1.0);
-    context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
-    context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vert_count);
-}
-pub fn compile_shader(
-    context: &WebGl2RenderingContext,
-    shader_type: u32,
-    source: &str,
-) -> Result<WebGlShader, String> {
-    let shader = context
-        .create_shader(shader_type)
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
-    context.shader_source(&shader, source);
-    context.compile_shader(&shader);
-
-    if context
-        .get_shader_parameter(&shader, WebGl2RenderingContext::COMPILE_STATUS)
-        .as_bool()
-        .unwrap_or(false)
-    {
-        Ok(shader)
-    } else {
-        Err(context
-            .get_shader_info_log(&shader)
-        .unwrap_or_else(|| String::from("Uknown error creating shader")))
-    }
-}
-
-pub fn link_program(
-    context: &WebGl2RenderingContext,
-    vert_shader: &WebGlShader,
-    frag_shader: &WebGlShader
-) -> Result<WebGlProgram, String> {
-    let program = context
-        .create_program()
-        .ok_or_else(|| String::from("Unable to create shader object"))?;
-    
-        context.attach_shader(&program, vert_shader);
-        context.attach_shader(&program, frag_shader);
-        context.link_program(&program);
-
-        if context
-            .get_program_parameter(&program, WebGl2RenderingContext::LINK_STATUS)
-            .as_bool()
-            .unwrap_or(false)
-        {
-            Ok(program)
-        } else {
-            Err(context
-                .get_program_info_log(&program)
-                .unwrap_or_else(|| String::from("Unknown error creating program object")))
-        }
 }
 
 #[wasm_bindgen]
