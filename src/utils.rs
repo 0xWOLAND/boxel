@@ -1,5 +1,5 @@
 extern crate wasm_bindgen;
-use std::fmt;
+use std::{fmt, fs};
 use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram};
 

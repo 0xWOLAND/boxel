@@ -2,10 +2,11 @@ pub mod utils;
 
 extern crate wasm_bindgen;
 
-use std::fmt;
+use std::{fmt, fs, env};
 use utils::*;
 use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram};
+use std::str::FromStr;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -13,6 +14,23 @@ use web_sys::{WebGl2RenderingContext, WebGlShader, WebGlProgram};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[wasm_bindgen]
+extern "C" {
+    // Use `js_namespace` here to bind `console.log(..)` instead of just
+    // `log(..)`
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+
+    // The `console.log` is quite polymorphic, so we can bind it with multiple
+    // signatures. Note that we need to use `js_name` to ensure we always call
+    // `log` in JS.
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn log_u32(a: u32);
+
+    // Multiple arguments too!
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    fn log_many(a: &str, b: &str);
+}
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -25,37 +43,26 @@ pub fn start() -> Result<(), JsValue> {
         .unwrap()
         .dyn_into::<WebGl2RenderingContext>()?;
 
-    let vert_shader = compile_shader(
+    
+    // let vert_shader_string = fs::read_to_string("vert.glsl").expect("Unable to read Vertex Shader File");
+    // let frag_shader_string = fs::read_to_string("frag.glsl").expect("Unable to read Fragment Shader File");
+
+    let vert_shader_string = include_str!("vert.glsl");
+    let frag_shader_string = include_str!("frag.glsl");
+
+    // log(&format!("VERT_SHADER {}", vert_shader_string));
+    // log(&format!("FRAG_SHADER {}", frag_shader_string));
+
+     let vert_shader = compile_shader(
         &context,
         WebGl2RenderingContext::VERTEX_SHADER,
-        r##"#version 300 es
-        
-        layout (location=0) in vec3 position;
-        layout (location=1) in vec3 color;
-
-        out vec3 frag_color;
-        
-        void main() {
-            gl_Position = vec4(position, 1.0);
-            frag_color = color;
-        }
-        "##,
+        vert_shader_string
     )?;
 
     let frag_shader = compile_shader(
         &context,
         WebGl2RenderingContext::FRAGMENT_SHADER,
-        r##"#version 300 es
-        
-        precision highp float;
-        out vec4 outColor;
-
-        in vec3 frag_color;
-        
-        void main() {
-            outColor = vec4(frag_color, 1.0);
-        }
-        "##,
+        frag_shader_string
     )?;
 
 

@@ -1,0 +1,10 @@
+#version 300 es
+
+precision highp float;
+out vec4 outColor;
+
+in vec3 frag_color;
+
+void main() {
+    outColor = vec4(frag_color, 1.0);
+}
