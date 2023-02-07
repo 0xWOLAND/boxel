@@ -1,0 +1,21 @@
+{
+  "name": "rustca",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "",
+  "scripts": {
+    "build": "wasm-pack build --target web",
+    "serve" : "npx serve ./",
+    "make" : "npm run build && npm run serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chndr1/RustCA.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chndr1/RustCA/issues"
+  },
+  "homepage": "https://github.com/chndr1/RustCA#readme"
+}
