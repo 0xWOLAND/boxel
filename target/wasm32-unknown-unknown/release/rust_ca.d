@@ -1,1 +1,1 @@
-/home/chndr1/RustCA/target/wasm32-unknown-unknown/release/rust_ca.wasm: /home/chndr1/RustCA/src/dino.png /home/chndr1/RustCA/src/lib.rs /home/chndr1/RustCA/src/shader.wgsl /home/chndr1/RustCA/src/shader_2.wgsl
+/home/chndr1/RustCA/target/wasm32-unknown-unknown/release/rust_ca.wasm: /home/chndr1/RustCA/src/camera.rs /home/chndr1/RustCA/src/dino.png /home/chndr1/RustCA/src/lib.rs /home/chndr1/RustCA/src/shader.wgsl /home/chndr1/RustCA/src/shader_2.wgsl /home/chndr1/RustCA/src/texture.rs
