@@ -199,60 +199,68 @@ impl State {
         };
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("dino.png");
-        let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
-        let diffuse_rgba = diffuse_image.to_rgba8();
+
+        let width: u32 = 100;
+        let height: u32 = 100;
+        let label: String = String::from("Color Voxel");
+        let texture: Texture = Texture::from_color(&device, &queue, [0, 100, 255, 255], width, height, &label).unwrap();
+        let diffuse_texture = texture.texture;
+        let diffuse_texture_view = texture.view;
+        let diffuse_sampler = texture.sampler;
+        // let diffuse_bytes = include_bytes!("dino.png");
+        // let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
+        // let diffuse_rgba = diffuse_image.to_rgba8();
         
-        use image::GenericImageView;
-        let dimensions = diffuse_image.dimensions();
+        // use image::GenericImageView;
+        // let dimensions = diffuse_image.dimensions();
 
-        // Make Texture
-        let texture_size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
-            depth_or_array_layers: 1,
-        };
+        // // Make Texture
+        // let texture_size = wgpu::Extent3d {
+        //     width: dimensions.0,
+        //     height: dimensions.1,
+        //     depth_or_array_layers: 1,
+        // };
 
-        let diffuse_texture = device.create_texture(
-            &wgpu::TextureDescriptor {
-                size: texture_size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                label: Some("diffuse_texture"),
-                view_formats: &[]
-            }
-        );
+        // let diffuse_texture = device.create_texture(
+        //     &wgpu::TextureDescriptor {
+        //         size: texture_size,
+        //         mip_level_count: 1,
+        //         sample_count: 1,
+        //         dimension: wgpu::TextureDimension::D2,
+        //         format: wgpu::TextureFormat::Rgba8UnormSrgb,
+        //         usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        //         label: Some("diffuse_texture"),
+        //         view_formats: &[]
+        //     }
+        // );
         
-        queue.write_texture(
-            wgpu::ImageCopyTexture {
-                texture: &diffuse_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &diffuse_rgba,
+        // queue.write_texture(
+        //     wgpu::ImageCopyTexture {
+        //         texture: &diffuse_texture,
+        //         mip_level: 0,
+        //         origin: wgpu::Origin3d::ZERO,
+        //         aspect: wgpu::TextureAspect::All,
+        //     },
+        //     &diffuse_rgba,
 
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0),
-                rows_per_image: std::num::NonZeroU32::new(dimensions.1)
-            },
-            texture_size
-        );
+        //     wgpu::ImageDataLayout {
+        //         offset: 0,
+        //         bytes_per_row: std::num::NonZeroU32::new(4 * dimensions.0),
+        //         rows_per_image: std::num::NonZeroU32::new(dimensions.1)
+        //     },
+        //     texture_size
+        // );
 
-        let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let diffuse_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Linear,
-            ..Default::default()
-        });
+        // let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
+        // let diffuse_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        //     address_mode_u: wgpu::AddressMode::ClampToEdge,
+        //     address_mode_v: wgpu::AddressMode::ClampToEdge,
+        //     address_mode_w: wgpu::AddressMode::ClampToEdge,
+        //     mag_filter: wgpu::FilterMode::Linear,
+        //     min_filter: wgpu::FilterMode::Linear,
+        //     mipmap_filter: wgpu::FilterMode::Linear,
+        //     ..Default::default()
+        // });
 
         // Camera
         let camera = Camera {

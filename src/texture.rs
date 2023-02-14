@@ -1,7 +1,9 @@
 use std::num::NonZeroU32;
 
 use anyhow::*;
+use env_logger::filter;
 use image::GenericImageView;
+use wgpu::{util::DeviceExt, TextureAspect};
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -10,14 +12,88 @@ pub struct Texture {
 }
 
 impl Texture {
+
+    pub fn from_color(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        color: [u8; 4],
+        width: u32,
+        height: u32,
+        label: &str
+    ) -> Result<Self> {
+        let mut bytes = Vec::with_capacity((width * height) as usize);
+        for _x in 0..width {
+            for _y in 0..height {
+                bytes.push(color[0]);
+                bytes.push(color[1]);
+                bytes.push(color[2]);
+                bytes.push(color[3]);
+            }
+        }
+        let bytes: &[u8] = bytes.as_ref();
+        return Self::from_bytes(device, queue, bytes, width, height, Some(label));
+    }
+
     pub fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         bytes: &[u8],
-        label: &str,
+        width: u32,
+        height: u32,
+        label: Option<&str>,
     ) -> Result<Self> {
-        let img = image::load_from_memory(bytes)?;
-        Self::from_image(device, queue, &img, Some(label))
+        let texture_size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+
+        let texture = device.create_texture(
+            &wgpu::TextureDescriptor {
+                size: texture_size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                label: Some("Diffuse Texture"),
+                view_formats: &[]
+            }
+        );
+        let bytes_per_row = std::num::NonZeroU32::new(4 * width);
+        let rows_per_image = std::num::NonZeroU32::new(height);
+
+        queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All
+            }, 
+            &bytes, 
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: bytes_per_row,
+                rows_per_image: rows_per_image
+            }, texture_size
+        );
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+
+        Ok(Self {
+            texture,
+            view,
+            sampler,
+        })
     }
 
     pub fn from_image(
