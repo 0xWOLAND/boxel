@@ -267,7 +267,7 @@ impl State {
 
         let camera_controller = CameraController::new(0.2);
         let mut camera_uniform = CameraUniform::new();
-        let camera_auto_rotate: CameraAutoRotate = CameraAutoRotate::new(camera, 2.0);
+        let camera_auto_rotate: CameraAutoRotate = CameraAutoRotate::new(camera, 0.0);
         // camera_uniform.update_view_proj(&camera);
 
         let camera_buffer = device.create_buffer_init(
@@ -327,7 +327,7 @@ impl State {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
