@@ -1,23 +1,25 @@
 use winit::event::{WindowEvent, VirtualKeyCode, KeyboardInput, ElementState};
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Camera {
-    pub eye: cgmath::Point3<f32>,
-    pub target: cgmath::Point3<f32>,
-    pub up: cgmath::Vector3<f32>,
-    pub aspect: f32,
-    pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32
+    pub eye: [f64; 3],
+    pub targ: [f64; 3],
+    pub up: [f64; 3],
+    pub aspect: f64,
+    pub fovy: f64,
+    pub znear: f64,
+    pub zfar: f64
 }
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
-    pub view_proj: [[f32; 4]; 4],
+    pub view_proj: [[f64; 4]; 4],
 }
 
 pub struct CameraController {
-    speed: f32,
+    speed: f64,
     is_forward_pressed: bool,
     is_backward_pressed: bool,
     is_left_pressed: bool,
@@ -26,12 +28,12 @@ pub struct CameraController {
 
 pub struct CameraAutoRotate {
     pub camera: Camera,
-    pub rad: f32,
-    pub cur: cgmath::Deg<f32>,
+    pub rad: f64,
+    pub cur: cgmath::Deg<f64>,
 }
 
 #[rustfmt::skip]
-pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
+pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f64> = cgmath::Matrix4::new(
     1.0, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 0.5, 0.0,
@@ -39,8 +41,12 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 );
 
 impl Camera {
-    fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f32> {
-        let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
+    fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f64> {
+        let view = cgmath::Matrix4::look_at_rh(
+            self.eye.into(),
+            self.targ.into(),
+            self.up.into()
+        );
         let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
 
         return OPENGL_TO_WGPU_MATRIX * proj * view;
@@ -62,7 +68,7 @@ impl CameraUniform {
 }
 
 impl CameraController {
-    pub fn new(speed: f32) -> Self {
+    pub fn new(speed: f64) -> Self {
         Self {
             speed,
             is_forward_pressed: false,
@@ -109,34 +115,43 @@ impl CameraController {
 
     pub fn update_camera(&self, camera: &mut Camera) {
         use cgmath::InnerSpace;
-        let forward = camera.target - camera.eye;
+        
+        let mut _targ: cgmath::Point3<f64> = camera.targ.into();
+        let mut _eye: cgmath::Point3<f64> = camera.eye.into();
+        let mut _up: cgmath::Vector3<f64> = camera.up.into();
+
+        let forward = _targ - _eye;
         let forward_norm = forward.normalize();
         let forward_mag = forward.magnitude();
 
         if self.is_forward_pressed && forward_mag > self.speed {
-            camera.eye += forward_norm * self.speed;
+            _eye += forward_norm * self.speed;
         }
         if self.is_backward_pressed {
-            camera.eye -= forward_norm * self.speed;
+            _eye -= forward_norm * self.speed;
         }
 
-        let right = forward_norm.cross(camera.up);
+        let right = forward_norm.cross(_up);
 
-        let forward = camera.target - camera.eye;
+        let forward = _targ - _eye;
         let forward_mag = forward.magnitude();
 
         if self.is_right_pressed {
-            camera.eye = camera.target - (forward + right * self.speed).normalize() * forward_mag;
+            _eye = _targ - (forward + right * self.speed).normalize() * forward_mag;
         }
         if self.is_left_pressed {
-            camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
+            _eye = _targ - (forward - right * self.speed).normalize() * forward_mag;
         }
+
+        camera.targ = [_targ.x, _targ.y, _targ.z];
+        camera.eye = [_eye.x, _eye.y, _eye.z];
+        camera.up = [_up.x, _up.y, _up.z];
     }
 }
 
 impl CameraAutoRotate {
-    pub fn new(camera: Camera, rad: f32) -> Self {
-        let cur = cgmath::Deg(0.0);
+    pub fn new(camera: Camera, rad: f64) -> Self {
+        let cur: cgmath::Deg<f64> = cgmath::Deg(0.0);
         return Self {
             camera,
             rad,
@@ -146,7 +161,7 @@ impl CameraAutoRotate {
 
     pub fn rotate(&mut self, camera_uniform: &mut CameraUniform) {
         self.cur += cgmath::Deg(self.rad);
-        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_z(self.cur)).into();
+        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * (cgmath::Matrix4::<f64>::from_angle_z(cgmath::Deg(0.0)))).into();
 
     }
 }
