@@ -23,6 +23,10 @@ pub struct CameraController {
     is_backward_pressed: bool,
     is_left_pressed: bool,
     is_right_pressed: bool,
+    is_rotate_forward_pressed: bool,
+    is_rotate_backward_pressed: bool,
+    is_rotate_left_pressed: bool,
+    is_rotate_right_pressed: bool,
 }
 
 pub struct CameraAutoRotate {
@@ -72,6 +76,10 @@ impl CameraController {
             is_backward_pressed: false,
             is_left_pressed: false,
             is_right_pressed: false,
+            is_rotate_forward_pressed: false,
+            is_rotate_backward_pressed: false,
+            is_rotate_left_pressed: false,
+            is_rotate_right_pressed: false,
         }
     }
 
@@ -87,20 +95,36 @@ impl CameraController {
             } => {
                 let is_pressed = *state == ElementState::Pressed;
                 match keycode {
-                    VirtualKeyCode::W | VirtualKeyCode::Up  => {
+                    VirtualKeyCode::Up  => {
                         self.is_forward_pressed = is_pressed;
                         true
                     }
-                    VirtualKeyCode::A | VirtualKeyCode::Left => {
+                    VirtualKeyCode::Left => {
                         self.is_left_pressed = is_pressed;
                         true
                     }
-                    VirtualKeyCode::S | VirtualKeyCode::Down => {
+                    VirtualKeyCode::Down => {
                         self.is_backward_pressed = is_pressed;
                         true
                     }
-                    VirtualKeyCode::D | VirtualKeyCode::Right => {
+                    VirtualKeyCode::Right => {
                         self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::W  => {
+                        self.is_rotate_forward_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::A => {
+                        self.is_rotate_left_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::S => {
+                        self.is_rotate_backward_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::D => {
+                        self.is_rotate_right_pressed = is_pressed;
                         true
                     }
                     _ => false,
@@ -110,7 +134,7 @@ impl CameraController {
         }
     }
 
-    pub fn update_camera(&self, camera: &mut Camera) {
+    pub fn update_camera(&self, camera: &mut Camera, camera_uniform: &mut CameraUniform) {
         use cgmath::InnerSpace;
         let forward = camera.target - camera.eye;
         let forward_norm = forward.normalize();
@@ -134,6 +158,18 @@ impl CameraController {
         if self.is_left_pressed {
             camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
         }
+        if self.is_rotate_forward_pressed {
+            camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_x(cgmath::Deg(15.0))).into();
+        }
+        if self.is_rotate_left_pressed {
+            camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_y(cgmath::Deg(-15.0))).into();
+        }
+        if self.is_rotate_backward_pressed {
+            camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_x(cgmath::Deg(-15.0))).into();
+        }
+        if self.is_rotate_right_pressed {
+            camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_y(cgmath::Deg(15.0))).into();
+        }
     }
 }
 
@@ -150,6 +186,40 @@ impl CameraAutoRotate {
     pub fn rotate(&mut self, camera_uniform: &mut CameraUniform) {
         self.cur += cgmath::Deg(self.rad);
         camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_z(self.cur)).into();
+    }
 
+    pub fn update_camera_uniform(&mut self, camera_uniform: &mut CameraUniform, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput { 
+                input: KeyboardInput {
+                    state,
+                    virtual_keycode: Some(keycode),
+                    ..
+                },
+                ..
+            } => {
+                let is_pressed = *state == ElementState::Pressed;
+                match keycode {
+                    VirtualKeyCode::W => {
+                        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_x(cgmath::Deg(45.0))).into();
+                        true
+                    }
+                    VirtualKeyCode::A => {
+                        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_y(cgmath::Deg(-45.0))).into();
+                        true
+                    }
+                    VirtualKeyCode::S => {
+                        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_x(cgmath::Deg(-45.0))).into();
+                        true
+                    }
+                    VirtualKeyCode::D => {
+                        camera_uniform.view_proj = (OPENGL_TO_WGPU_MATRIX * self.camera.build_view_projection_matrix() * cgmath::Matrix4::from_angle_y(cgmath::Deg(45.0))).into();
+                        true
+                    }
+                    _ => false,
+                }
+            }
+             _ => false
+        }
     }
 }
