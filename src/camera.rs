@@ -14,7 +14,9 @@ pub struct Camera {
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct CameraUniform {
     pub view_proj: [[f32; 4]; 4],
-    pub view_position: [f32; 4]
+    pub view_position: [f32; 4],
+    pub view_up: [f32; 4],
+    pub view_target: [f32; 4]
 }
 
 pub struct CameraController {
@@ -58,13 +60,17 @@ impl CameraUniform {
         use cgmath::SquareMatrix;
         return Self {
             view_proj: cgmath::Matrix4::identity().into(),
-            view_position: [0.0; 4]
+            view_position: [0.0; 4],
+            view_target: [0.0; 4],
+            view_up: [0.0, 1.0, 0.0, 0.0]
         };
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
         self.view_proj = camera.build_view_projection_matrix().into();
         self.view_position = camera.eye.to_homogeneous().into();
+        self.view_target = camera.target.to_homogeneous().into();
+        self.view_up = camera.eye.to_homogeneous().into();
     }
 }
 
@@ -136,6 +142,7 @@ impl CameraController {
 
     pub fn update_camera(&self, camera: &mut Camera, camera_uniform: &mut CameraUniform) {
         use cgmath::InnerSpace;
+        camera_uniform.update_view_proj(camera);
         let forward = camera.target - camera.eye;
         let forward_norm = forward.normalize();
         let forward_mag = forward.magnitude();
