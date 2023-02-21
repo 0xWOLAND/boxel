@@ -5,8 +5,20 @@ struct CameraUniform {
     view_up: vec4<f32>,
     view_target: vec4<f32>
 };
+
+struct wrapped_f32 {
+  @size(16) elem: f32,
+}
+struct big_stride {
+//   a: array<wrapped_f32, 8 * 32768> // stride 16
+  a: array<wrapped_f32, 262144> // stride 16
+}
+
 @group(1) @binding(0) // 1.
 var<uniform> camera: CameraUniform;
+
+@group(1) @binding(1) var<uniform> valid: big_stride;
+
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -52,5 +64,10 @@ fn voxel_traversal(ray_start: vec3<f32>, ray_direction: vec3<f32>) -> bool {
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // var ans = voxel_traversal(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0));
     // return index(in.tex_coords[0], in.tex_coords[1]);
-    return camera.view_target;
+    if (valid.a[7u].elem == 2.0) {
+        return vec4(in.tex_coords[0], in.tex_coords[1], 1.0, 1.0);
+    }
+    else {
+        return vec4(in.tex_coords[0], in.tex_coords[1], 0.0, 1.0);
+    }
 }

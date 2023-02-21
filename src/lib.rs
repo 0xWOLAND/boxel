@@ -331,6 +331,17 @@ impl State {
         let camera_controller = CameraController::new(0.2);
         let mut camera_uniform = CameraUniform::new();
         let camera_auto_rotate: CameraAutoRotate = CameraAutoRotate::new(camera, 0.0);
+
+        let mut buffer_data: [f32; 32 * 32 * 32 * 32] = [0.0; 32 * 32 * 32 * 32];
+        buffer_data[28] = 2.0;
+        let buffer_size = buffer_data.len() * std::mem::size_of::<f32>();
+        let storage_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: bytemuck::cast_slice(&buffer_data),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
+            }
+        );
         // camera_uniform.update_view_proj(&camera);
 
         let camera_buffer = device.create_buffer_init(
@@ -397,7 +408,17 @@ impl State {
                         min_binding_size: None,
                     },
                     count: None,
-                }
+                }, 
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }, 
             ],
             label: Some("camera_bind_group_layout"),
         });
@@ -409,6 +430,10 @@ impl State {
                 wgpu::BindGroupEntry {
                     binding: 0,
                     resource: camera_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: storage_buffer.as_entire_binding()
                 }
             ],
             label: Some("camera_bind_group"),
